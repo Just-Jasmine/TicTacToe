@@ -8,7 +8,9 @@ proc initGrid(): array[3, array[3, string]] =
       [" ", " ", " "],
       [" ", " ", " "]
     ]
-  
+
+  # Walks through the rows and columns of the grid, then
+  # fills them with a number in the order of 1..9
   for i in 0..2:
     for j in 0..2:
       grid[i][j] = $num
@@ -43,20 +45,39 @@ proc ticTacToe() =
 
     echo("Enter slot number (1-9): ")
 
-    let
-      slot = parseInt($getch())
-      row = (slot - 1) div 3
-      col = (slot - 1) mod 3
 
-    if grid[row][col] != $slot:
-      draw = false
-      moves += 1
+    # Get Slot Position in grid
+    var
+        slot:int
+        row: int
+        col: int
+    try:
+        slot = parseInt($getch())
+        row = (slot - 1) div 3
+        col = (slot - 1) mod 3
+    except:
+        draw = false
+        moves += 1
+        echo("Please Choose a Number.")
+        continue
 
-      echo("Slot taken. Choose another one")
-      continue
+
+    try:
+        if grid[row][col] != $slot:
+          draw = false
+          moves += 1
+
+          echo("Slot taken. Choose another one")
+          continue
+    except:
+        draw = false
+        moves += 1
+
+        echo("Please Choose A Number 1-9.")
+        continue
 
     echo("X or O? ")
-    var xo = toUpperAscii($getch())
+    var xo = $getch().toUpperAscii()
 
     if not (xo == "X" or xo == "O"):
       draw = false
