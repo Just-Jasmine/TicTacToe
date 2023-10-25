@@ -1,45 +1,97 @@
 import terminal, strutils, random
 
-# adds the X or O to the grid
-proc xoPrint(ptrArray: array[3, ptr], xo: ptr, grid: ptr) =
-  case xo[]
-  of "X": xo[] = "\e[31mX\e[m"
-  of "O": xo[] = "\e[32mO\e[m"
-  grid[][ptrArray[1][]][ptrArray[2][]] = xo[]
-  return
 
 # Selects a the slot from the 3 by 3 array
-proc chooseSlot(ptrArray: array[3, ptr]) =
-  ptrArray[1][] = (ptrArray[0][] - 1) div 3
-  ptrArray[2][] = (ptrArray[0][] - 1) mod 3
-  return
+proc chooseSlot(slot: int, grid: ptr): array[2, int] =
+  var 
+    row = (slot - 1) div 3
+    col = (slot - 1) mod 3
+  return [row, col]
+
+# adds the X or O to the grid
+proc xoPrint(slot: int, xo: string, grid: ptr) =
+  # Sets Color
+  var 
+    xoc = xo
+  case xoc
+  of "X":
+    xoc = "X" 
+    xoc = "\e[31mX\e[m"
+  of "O":
+    xoc = "O" 
+    xoc = "\e[32mO\e[m"
+  var rowCol = chooseSlot(slot, grid)
+  grid[][rowCol[0]][rowCol[1]] = xoc
 
 # Executes ai turn Logic
-proc aiMove() =
-  return
-
+proc aiMove(draw: ptr, turns: ptr, grid: ptr): int =
+  var 
+    slot: int
+  if grid[][1][1] == "5":
+    slot = 5
+  else:
+    while(true):
+      randomize()
+      slot = rand(1..9)
+      var rowCol = chooseSlot(slot, grid)
+      if grid[][rowCol[0]][rowCol[1]] != $slot:
+        continue
+      break
+  return slot
+  
 # Executes player turn Logic
-proc playerMove(ptrArray: array[3, ptr], draw: ptr, turns: ptr, grid: ptr) =
-  try:
-    echo("Enter slot number (1-9): ")
-    ptrArray[0][] = parseInt($getch())
-    chooseSlot(ptrArray)
-    return
-  except:
-    draw[] = false
-    turns[] += 1
-    return
-  try:
-    if grid[][ptrArray[1][]][ptrArray[2][]] != $ptrArray[0][]:
+proc playerMove(draw: ptr, turns: ptr, grid: ptr): int =
+
+  var
+    slot: int
+    row: int
+    col: int
+    rowCol: array[2, int]
+  while(true):
+    try:
+      echo("Enter slot number (1-9): ")
+    # slot = character as an int
+      slot = parseInt($getch())
+    except:
       draw[] = false
       turns[] += 1
-      echo("Slot taken. Choose another one: ")
-      return
-  except:
-    draw[] = false
-    turns[] += 1
-    echo("Please choose a number 1-9: ")
-    return
+      continue
+    rowCol = chooseSlot(slot, grid)
+    row = rowCol[0]
+    col = rowCol[1]
+    try:
+      if grid[][row][col] != $slot:
+        draw[] = false
+        turns[] += 1
+        echo("Please choose an unused slot: ")
+        continue
+    except:
+      echo("Please use a number 1-9: ")
+      return slot
+
+
+
+
+
+
+
+
+
+    #[
+    try:
+      if grid[][rowCol[0]][rowCol[1]] != $slot:
+        draw[] = false
+        turns[] += 1
+        echo("Slot taken. Choose another one: ")
+        continue
+      break
+    except:
+      draw[] = false
+      turns[] += 1
+      echo("Please choose a number 1-9: ")
+      continue
+    ]#
+    return slot
 
 # returns an initial 3 by 3 array
 proc initGrid(): array[3, array[3, string]] =
@@ -86,9 +138,7 @@ proc ticTacToe() =
     aiEnabled = false
     xo: string
     slot: int
-    row: int
-    col: int
-
+  
   # Welcomes the user and asks if they want ai enabled
   while (true):
     echo("Welcome to TicTacToe. Enable AI?(Y/N): ")
@@ -112,10 +162,10 @@ proc ticTacToe() =
     try:
       case $getch().toUpperAscii()
       of "X":
-        xo = "X"
+        xo = "O"
         break
       of "O":
-        xo = "O"
+        xo = "X"
         break
       else:
         echo("Please enter X or O: ")
@@ -132,15 +182,27 @@ proc ticTacToe() =
     
     # Checks if it's the AI's turn, and executes if it isn't
     if (aiTurn != true):
-      var ptrArray = [addr(slot), addr(row), addr(col)]
-      playerMove(ptrArray, addr(draw), addr(turns), addr(grid))
-      xoPrint(ptrArray, addr(xo), addr(grid))
-      aiMove()
-
+      if xo == "X":
+        xo = "O"
+      else:
+        xo = "X"
+      slot = playerMove(addr(draw), addr(turns), addr(grid))
+      xoPrint(slot, xo, addr(grid))
       if aiEnabled:
         aiTurn = true
+    # Executes on AI's turn
+    else:
+      if xo == "X":
+        xo = "O"
+      else:
+        xo = "X"
+      slot = aiMove(addr(draw), addr(turns), addr(grid))
+      xoPrint(slot, xo, addr(grid))
+      aiTurn = false
+
 
   drawGrid(grid)
   echo("Game over!")
+
 
 ticTacToe()
